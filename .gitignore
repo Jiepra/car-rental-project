@@ -1,0 +1,44 @@
+# Global ignores (for the root project folder)
+.DS_Store
+.env
+
+# Spring Boot backend ignores
+/car-rental-backend/target/
+/car-rental-backend/.mvn/timing.properties
+/car-rental-backend/.flattened-pom.xml
+/car-rental-backend/pom.xml.tag
+/car-rental-backend/pom.xml.releaseBackup
+/car-rental-backend/pom.xml.versionsBackup
+/car-rental-backend/release.properties
+/car-rental-backend/dependency-reduced-pom.xml
+/car-rental-backend/buildnumber.properties
+/car-rental-backend/.idea/
+/car-rental-backend/.vscode/
+/car-rental-backend/*.iml
+/car-rental-backend/*.ipr
+/car-rental-backend/*.iws
+/car-rental-backend/.project
+/car-rental-backend/.classpath
+/car-rental-backend/.settings/
+/car-rental-backend/.metadata
+/car-rental-backend/*.log
+/car-rental-backend/logs/
+/car-rental-backend/tmp/
+/car-rental-backend/*.zip
+/car-rental-backend/*.tar.gz
+/car-rental-backend/*.sqlite
+
+# React frontend ignores
+/car-rental-frontend/node_modules
+/car-rental-frontend/.pnp
+/car-rental-frontend/.pnp.js
+/car-rental-frontend/coverage
+/car-rental-frontend/build
+/car-rental-frontend/.env.local
+/car-rental-frontend/.env.development.local
+/car-rental-frontend/.env.test.local
+/car-rental-frontend/.env.production.local
+/car-rental-frontend/.next/
+/car-rental-frontend/npm-debug.log*
+/car-rental-frontend/yarn-debug.log*
+/car-rental-frontend/yarn-error.log*
