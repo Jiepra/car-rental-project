@@ -54,7 +54,7 @@ public class RentalService {
 
         long numberOfDays = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()) + 1;
         if (numberOfDays <= 0) {
-             numberOfDays = 1; // Minimal 1 hari
+             numberOfDays = 1;
         }
         double totalPrice = car.getDailyRate() * numberOfDays;
 
@@ -66,16 +66,47 @@ public class RentalService {
         rental.setTotalPrice(totalPrice);
         rental.setStatus("PENDING");
 
-        car.setAvailable(false); // Tandai mobil tidak tersedia
+        // Perhatikan: Mobil ditandai tidak tersedia saat disewa (PENDING)
+        car.setAvailable(false);
         carRepository.save(car);
 
         return rentalRepository.save(rental);
     }
 
-    // *** TAMBAHKAN METODE INI ***
     public List<Rental> getRentalsByLoggedInUser(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
         return rentalRepository.findByUser_Id(user.getId());
+    }
+
+    // *** TAMBAHKAN METODE INI ***
+    public Rental updateRentalStatus(Long rentalId, String newStatus) {
+        Rental rental = rentalRepository.findById(rentalId)
+                .orElseThrow(() -> new RuntimeException("Rental not found with ID: " + rentalId));
+
+        // Contoh validasi status (sesuai kebutuhan bisnis Anda)
+        if (!newStatus.equals("CONFIRMED") && !newStatus.equals("COMPLETED") && !newStatus.equals("CANCELLED")) {
+            throw new IllegalArgumentException("Status tidak valid: " + newStatus);
+        }
+
+        rental.setStatus(newStatus);
+        Rental updatedRental = rentalRepository.save(rental);
+
+        // Jika status berubah menjadi 'COMPLETED' atau 'CANCELLED', mobil bisa jadi tersedia lagi
+        if (newStatus.equals("COMPLETED") || newStatus.equals("CANCELLED")) {
+            Car car = updatedRental.getCar();
+            // Periksa apakah mobil ini tidak lagi terkait dengan rental aktif lainnya
+            // Ini bisa menjadi logika kompleks jika satu mobil bisa punya banyak rental,
+            // tapi untuk kasus sederhana, kita bisa langsung set available
+            // Jika ada banyak rental untuk satu mobil, Anda harus memverifikasi apakah tidak ada rental PENDING/CONFIRMED lain untuk mobil ini
+            boolean hasOtherActiveRentals = rentalRepository.findByCar_Id(car.getId()).stream()
+                .anyMatch(r -> r.getId().equals(rentalId) && (r.getStatus().equals("PENDING") || r.getStatus().equals("CONFIRMED")));
+
+            if (!hasOtherActiveRentals) {
+                 car.setAvailable(true); // Hanya set tersedia jika tidak ada rental aktif lain
+                 carRepository.save(car);
+            }
+        }
+        return updatedRental;
     }
 }

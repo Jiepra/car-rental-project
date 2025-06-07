@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const MyRentalsPage = () => {
   const { token, isLoggedIn } = useContext(AuthContext);
@@ -9,11 +10,11 @@ const MyRentalsPage = () => {
 
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+ 
 
   useEffect(() => {
     if (!isLoggedIn) {
-      alert("Anda harus login untuk melihat riwayat penyewaan Anda.");
+      toast.info("Anda harus login untuk melihat riwayat penyewaan Anda.");
       navigate('/login');
       return;
     }
@@ -33,7 +34,7 @@ const MyRentalsPage = () => {
         const data = await response.json();
         setRentals(data);
       } catch (err) {
-        setError(err.message || 'Gagal memuat riwayat penyewaan Anda.');
+        toast.error(err.message || 'Gagal memuat riwayat penyewaan Anda.');
         console.error("Error fetching my rentals:", err);
       } finally {
         setLoading(false);
@@ -44,7 +45,7 @@ const MyRentalsPage = () => {
   }, [token, isLoggedIn, navigate]); // Dependensi effect
 
   if (loading) return <div className="text-center p-8">Memuat riwayat penyewaan...</div>;
-  if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+
   if (rentals.length === 0) return <div className="text-center p-8">Anda belum memiliki riwayat penyewaan.</div>;
 
   return (

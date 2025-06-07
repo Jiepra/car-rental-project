@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom'; // Import Link
 import { AuthContext } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 
 const CarDetailPage = () => {
   const { id } = useParams(); // Ambil ID mobil dari URL
@@ -10,7 +11,7 @@ const CarDetailPage = () => {
 
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+
 
   useEffect(() => {
     const fetchCarDetails = async () => {
@@ -22,7 +23,7 @@ const CarDetailPage = () => {
         const data = await response.json();
         setCar(data);
       } catch (err) {
-        setError(err.message || "Gagal memuat detail mobil.");
+        toast.error(err.message || "Gagal memuat detail mobil.");
         console.error("Error fetching car details:", err);
       } finally {
         setLoading(false);
@@ -38,13 +39,13 @@ const CarDetailPage = () => {
     if (isLoggedIn) {
       navigate(`/payment/${car.id}`); // Arahkan ke halaman pembayaran dengan ID mobil
     } else {
-      alert("Anda harus login untuk menyewa mobil.");
+      toast.info("Anda harus login untuk menyewa mobil.");
       navigate('/login'); // Arahkan ke halaman login
     }
   };
 
   if (loading) return <div className="text-center p-8">Memuat detail mobil...</div>;
-  if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+
   if (!car) return <div className="text-center p-8">Mobil tidak ditemukan.</div>; // Jika car null setelah loading selesai
 
   return (

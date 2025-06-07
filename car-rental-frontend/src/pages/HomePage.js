@@ -1,27 +1,26 @@
 // src/pages/HomePage.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react'; // Import useCallback
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify'; // Import toast
 
 const HomePage = () => {
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(null); // Keep error state for initial load error
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAvailable, setFilterAvailable] = useState(false);
-
-  // *** STATE BARU UNTUK DEBOUNCE SEARCH TERM ***
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
-  const fetchCars = async (currentSearchTerm, currentFilterAvailable) => { // Terima parameter
+  const fetchCars = useCallback(async (currentSearchTerm, currentFilterAvailable) => {
     setLoading(true);
-    setError(null);
+    setError(null); // Clear error on new fetch
     let url = 'http://localhost:8080/api/cars';
     const params = new URLSearchParams();
 
-    if (currentSearchTerm) { // Gunakan currentSearchTerm dari parameter
+    if (currentSearchTerm) {
       params.append('search', currentSearchTerm);
     }
-    if (currentFilterAvailable) { // Gunakan currentFilterAvailable dari parameter
+    if (currentFilterAvailable) {
       params.append('available', 'true');
     }
 
@@ -37,47 +36,45 @@ const HomePage = () => {
       const data = await response.json();
       setCars(data);
     } catch (err) {
+      // Use toast for specific action errors, keep error state for general fetch error display
       setError("Gagal memuat daftar mobil.");
+      toast.error(err.message || "Gagal memuat daftar mobil."); // Toast untuk feedback cepat
       console.error("Error fetching cars:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // dependencies are empty because values are passed as args
 
-  // *** EFFECT UNTUK DEBOUNCING SEARCH TERM ***
   useEffect(() => {
-    // Set a timeout to update the debounced search term after 500ms
     const timerId = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 500); // Debounce delay 500ms (0.5 detik)
-
-    // Cleanup function: clear the timeout if searchTerm changes before 500ms
+    }, 500);
     return () => {
       clearTimeout(timerId);
     };
-  }, [searchTerm]); // Only re-run this effect when searchTerm changes
+  }, [searchTerm]);
 
-  // *** EFFECT UTAMA UNTUK FETCH DATA, SEKARANG TERGANTUNG PADA DEBOUNCED SEARCH TERM ***
   useEffect(() => {
-    fetchCars(debouncedSearchTerm, filterAvailable); // Panggil fetchCars dengan debounced term
-  }, [debouncedSearchTerm, filterAvailable]); // Hanya re-run when debouncedSearchTerm or filterAvailable changes
-
+    fetchCars(debouncedSearchTerm, filterAvailable);
+  }, [debouncedSearchTerm, filterAvailable, fetchCars]); // Tambahkan fetchCars ke deps
 
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value); // Update searchTerm immediately
+    setSearchTerm(e.target.value);
   };
 
   const handleFilterAvailableChange = (e) => {
-    setFilterAvailable(e.target.checked); // FilterAvailable tidak perlu debounce karena biasanya click
+    setFilterAvailable(e.target.checked);
   };
 
+  // Ubah tampilan loading dan error agar lebih responsif
   if (loading) return <div className="text-center p-8">Memuat mobil...</div>;
-  if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+  if (error && cars.length === 0) return <div className="text-center p-8 text-red-500">{error}</div>; // Tampilkan error jika tidak ada mobil yang berhasil dimuat
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-4xl font-bold text-center mb-8">Daftar Mobil Tersedia</h1>
 
+      {/* Bagian Pencarian dan Filter */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-8 max-w-2xl mx-auto flex flex-col md:flex-row gap-4 justify-center items-center">
         <input
           type="text"
@@ -101,7 +98,7 @@ const HomePage = () => {
       {cars.length === 0 && !loading && !error ? (
           <p className="text-center text-lg text-gray-600">Tidak ada mobil yang ditemukan sesuai kriteria Anda.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* <-- UBAH GRID INI */}
           {cars.map((car) => (
             <div key={car.id} className="bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-shadow duration-300">
               <Link to={`/cars/${car.id}`}>

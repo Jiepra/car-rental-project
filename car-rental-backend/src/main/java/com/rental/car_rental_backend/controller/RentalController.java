@@ -1,16 +1,25 @@
 // src/main/java/com/rental/carrentalbackend/controller/RentalController.java
 package com.rental.car_rental_backend.controller;
 
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping; // Import HttpMethod
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.rental.car_rental_backend.dto.RentalRequest;
 import com.rental.car_rental_backend.model.Rental;
 import com.rental.car_rental_backend.service.RentalService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication; // Import Authentication
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/rentals")
@@ -21,6 +30,7 @@ public class RentalController {
     private final RentalService rentalService;
 
     // Endpoint untuk mendapatkan semua rental (mungkin hanya untuk admin)
+    // Di SecurityConfig, ini akan diatur untuk ADMIN saja
     @GetMapping
     public ResponseEntity<List<Rental>> getAllRentals() {
         List<Rental> rentals = rentalService.getAllRentals();
@@ -38,15 +48,24 @@ public class RentalController {
         }
     }
 
-    // *** TAMBAHKAN ENDPOINT INI ***
     // Endpoint untuk mendapatkan rental oleh user yang sedang login
-    @GetMapping("/me") // Misalnya /api/rentals/me
+    @GetMapping("/me")
     public ResponseEntity<List<Rental>> getMyRentals(Authentication authentication) {
-        // Spring Security secara otomatis mengisi objek Authentication dengan detail user yang login
-        // Username dari user yang login bisa didapatkan dari authentication.getName()
         List<Rental> myRentals = rentalService.getRentalsByLoggedInUser(authentication.getName());
         return new ResponseEntity<>(myRentals, HttpStatus.OK);
     }
 
-    // Anda bisa menambahkan endpoint GET /api/rentals/{rentalId} untuk detail rental tertentu jika diperlukan
+    // *** TAMBAHKAN ENDPOINT INI ***
+    // Endpoint untuk mengupdate status rental (hanya admin)
+    @PutMapping("/{id}/status") // PUT /api/rentals/{id}/status
+    public ResponseEntity<Rental> updateRentalStatus(@PathVariable Long id, @RequestBody String newStatus) {
+        try {
+            Rental updatedRental = rentalService.updateRentalStatus(id, newStatus);
+            return new ResponseEntity<>(updatedRental, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST); // Status tidak valid
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND); // Rental tidak ditemukan
+        }
+    }
 }

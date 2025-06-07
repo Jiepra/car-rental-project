@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,36 +19,40 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
 
-@Configuration // Menandakan kelas ini adalah kelas konfigurasi Spring
-@EnableWebSecurity // Mengaktifkan fungsionalitas keamanan web Spring Security
-@RequiredArgsConstructor // Dari Lombok, menghasilkan konstruktor dengan semua final field
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // Inject JwtAuthenticationFilter dan AuthenticationProvider yang telah kita buat
+
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
-    @Bean // Menandakan metode ini akan menghasilkan bean yang dikelola oleh Spring
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable) // Menonaktifkan CSRF karena kita menggunakan JWT (stateless)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Mengaktifkan konfigurasi CORS yang telah didefinisikan
-            .authorizeHttpRequests(authorize -> authorize // Mengatur aturan otorisasi untuk permintaan HTTP
-                .requestMatchers("/api/auth/**").permitAll() // Mengizinkan semua permintaan ke /api/auth/ (register, login) tanpa otentikasi
-                .requestMatchers("/api/cars").permitAll() // Mengizinkan semua melihat daftar mobil (Home Page)
-                .requestMatchers("/api/cars/{id}").permitAll() // Mengizinkan semua melihat daftar mobil (Home Page)
-                .requestMatchers("/api/cars/**").hasAnyAuthority("ADMIN") // Hanya ADMIN yang bisa mengelola (CRUD) mobil
-                .requestMatchers("/api/rentals/**").hasAnyAuthority("CUSTOMER", "ADMIN") // User dengan peran CUSTOMER atau ADMIN dapat mengakses rental
-                .requestMatchers("/api/users/**").hasAnyAuthority("ADMIN") // Hanya ADMIN yang dapat mengelola user
-                .anyRequest().authenticated() // Semua permintaan lain harus terotentikasi
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/cars").permitAll()
+                .requestMatchers("/api/cars/{id}").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/cars").hasAnyAuthority("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/cars/**").hasAnyAuthority("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/cars/**").hasAnyAuthority("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/rentals").hasAnyAuthority("ADMIN") // GET all rentals only for ADMIN
+                .requestMatchers(HttpMethod.GET, "/api/rentals/me").hasAnyAuthority("CUSTOMER", "ADMIN") // GET my rentals for CUSTOMER & ADMIN
+                .requestMatchers(HttpMethod.PUT, "/api/rentals/{id}/status").hasAnyAuthority("ADMIN") // <--- TAMBAH BARIS INI
+                .requestMatchers("/api/users/**").hasAnyAuthority("ADMIN")
+                .anyRequest().authenticated()
             )
-            .sessionManagement(session -> session // Mengatur manajemen sesi
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Menggunakan sesi stateless (penting untuk JWT)
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .authenticationProvider(authenticationProvider) // Mendaftarkan AuthenticationProvider kustom kita
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // Menambahkan filter JWT sebelum filter otentikasi username/password bawaan Spring Security
+            .authenticationProvider(authenticationProvider)
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build(); // Membangun dan mengembalikan SecurityFilterChain
+        return http.build();
     }
 
     // Bean untuk konfigurasi CORS yang lebih fleksibel
