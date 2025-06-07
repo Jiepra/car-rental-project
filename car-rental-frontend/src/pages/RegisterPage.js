@@ -48,7 +48,15 @@ const RegisterPage = () => {
           }),
         });
 
-        const data = await response.json();
+        const text = await response.text();
+        let data = {};
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch (jsonErr) {
+            // Jika gagal parse JSON, biarkan data kosong
+          }
+        }
 
         if (response.ok) {
           toast.success('Pendaftaran berhasil! Silakan login.');

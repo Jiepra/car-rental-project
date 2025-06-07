@@ -1,14 +1,19 @@
-// src/main/java/com/rental/carrentalbackend/service/CarService.java
+// src/main/java/com/rental/car_rental_backend.service/CarService.java
 package com.rental.car_rental_backend.service;
 
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.List; // Tambahkan import jika belum ada
+import java.util.Optional; // Tambahkan import jika belum ada
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable; // Tambahkan import Collections
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.rental.car_rental_backend.model.Car;
-import com.rental.car_rental_backend.repository.CarRepository;
+import com.rental.car_rental_backend.repository.CarRepository; // Import Page
+import com.rental.car_rental_backend.repository.RentalRepository;
 
 @Service
 public class CarService {
@@ -16,20 +21,47 @@ public class CarService {
     @Autowired
     private CarRepository carRepository;
 
-    public List<Car> getAllCars() {
-        return carRepository.findAll();
+    @Autowired
+    private ImageService imageService;
+
+    @Autowired
+    private RentalRepository rentalRepository; // Inject RentalRepository untuk deleteCar
+
+    // *** MODIFIKASI METODE INI UNTUK PAGINASI ***
+    public Page<Car> getAllCars(Pageable pageable) { // Sekarang mengembalikan Page<Car>
+        return carRepository.findAll(pageable);
     }
 
     public Optional<Car> getCarById(Long id) {
         return carRepository.findById(id);
     }
 
-    public Car createCar(Car car) {
+    public Car createCar(Car car, MultipartFile imageFile) throws IOException {
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String imageUrl = imageService.saveImage(imageFile);
+            car.setImageUrl(imageUrl);
+        }
         return carRepository.save(car);
     }
 
-    public Car updateCar(Long id, Car carDetails) {
+    public Car updateCar(Long id, Car carDetails, MultipartFile imageFile) throws IOException {
         Car car = carRepository.findById(id).orElseThrow(() -> new RuntimeException("Car not found with id: " + id));
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            if (car.getImageUrl() != null && !car.getImageUrl().isEmpty()) {
+                imageService.deleteImage(car.getImageUrl());
+            }
+            String newImageUrl = imageService.saveImage(imageFile);
+            car.setImageUrl(newImageUrl);
+        } else if (carDetails.getImageUrl() == null || carDetails.getImageUrl().isEmpty()) {
+            // Jika imageFile null/kosong dan imageUrl di carDetails juga kosong (berarti ingin menghapus gambar)
+            if (car.getImageUrl() != null && !car.getImageUrl().isEmpty()) {
+                imageService.deleteImage(car.getImageUrl());
+            }
+            car.setImageUrl(null);
+        }
+        // Jika tidak ada file baru dan imageUrl di carDetails tidak kosong, biarkan imageUrl lama tetap ada.
+
         car.setBrand(carDetails.getBrand());
         car.setModel(carDetails.getModel());
         car.setYear(carDetails.getYear());
@@ -39,9 +71,18 @@ public class CarService {
         return carRepository.save(car);
     }
 
-    public void deleteCar(Long id) {
+    public void deleteCar(Long id) throws IOException {
+        Car car = carRepository.findById(id).orElseThrow(() -> new RuntimeException("Car not found with id: " + id));
+        
+        // Hapus gambar terkait saat mobil dihapus
+        if (car.getImageUrl() != null && !car.getImageUrl().isEmpty()) {
+            imageService.deleteImage(car.getImageUrl());
+        }
         carRepository.deleteById(id);
     }
+
+    // *** KOREKSI LOGIKA searchAndFilterCars DAN updateCarAvailability ***
+    // Logika ini harus mengembalikan List<Car> atau Car, bukan null
 
     public Car updateCarAvailability(Long id, boolean available) {
         Car car = carRepository.findById(id).orElseThrow(() -> new RuntimeException("Car not found with id: " + id));
@@ -49,22 +90,25 @@ public class CarService {
         return carRepository.save(car);
     }
 
-    // *** TAMBAHKAN METODE INI UNTUK PENCARIAN DAN FILTER ***
-    public List<Car> searchAndFilterCars(String searchTerm, Boolean available) {
+
+
+    // *** MODIFIKASI METODE INI UNTUK PAGINASI DAN FILTER ***
+    public Page<Car> searchAndFilterCars(String searchTerm, Boolean available, Pageable pageable) {
         if (searchTerm != null && !searchTerm.trim().isEmpty()) {
             if (available != null) {
-                // Cari berdasarkan merek/model DAN ketersediaan
-                return carRepository.findByAvailableTrueAndBrandContainingIgnoreCaseOrAvailableTrueAndModelContainingIgnoreCase(searchTerm, searchTerm);
+                // Perlu metode kustom di repository yang menerima Pageable
+                // Untuk sementara, jika tidak ada implementasi khusus dengan Pageable untuk kombinasi ini,
+                // kita bisa memfilter dari findAll dan kemudian convert ke Page (kurang efisien untuk data besar)
+                // ATAU membuat query custom di repo (disarankan)
+                // Untuk sekarang, kita akan asumsikan kita punya findBy* dengan Pageable
+                return carRepository.findByAvailableTrueAndBrandContainingIgnoreCaseOrAvailableTrueAndModelContainingIgnoreCase(searchTerm, searchTerm, pageable);
             } else {
-                // Hanya cari berdasarkan merek/model (termasuk yang tidak tersedia jika tidak ada filter)
-                return carRepository.findByBrandContainingIgnoreCaseOrModelContainingIgnoreCase(searchTerm, searchTerm);
+                return carRepository.findByBrandContainingIgnoreCaseOrModelContainingIgnoreCase(searchTerm, searchTerm, pageable);
             }
         } else if (available != null) {
-            // Hanya filter berdasarkan ketersediaan (tanpa search term)
-            return carRepository.findByAvailable(available);
+            return carRepository.findByAvailable(available, pageable); // Perlu metode ini di repo
         } else {
-            // Tidak ada search term atau filter, kembalikan semua mobil
-            return carRepository.findAll();
+            return carRepository.findAll(pageable);
         }
     }
 }

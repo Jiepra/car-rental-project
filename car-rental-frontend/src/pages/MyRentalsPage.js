@@ -31,7 +31,15 @@ const MyRentalsPage = () => {
           throw new Error(`Failed to fetch rentals: ${response.statusText}`);
         }
 
-        const data = await response.json();
+        const text = await response.text();
+        let data = [];
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch (jsonErr) {
+            // Jika gagal parse JSON, biarkan data kosong
+          }
+        }
         setRentals(data);
       } catch (err) {
         toast.error(err.message || 'Gagal memuat riwayat penyewaan Anda.');

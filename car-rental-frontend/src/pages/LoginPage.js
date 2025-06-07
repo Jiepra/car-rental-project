@@ -33,7 +33,15 @@ const LoginPage = () => {
           body: JSON.stringify(values), // values sudah berisi username dan password
         });
 
-        const data = await response.json();
+        const text = await response.text();
+        let data = {};
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch (jsonErr) {
+            // Jika gagal parse JSON, biarkan data kosong
+          }
+        }
 
         if (response.ok) {
           login(data.token, data.username, data.role);

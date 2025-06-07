@@ -1,15 +1,16 @@
 package com.rental.car_rental_backend.service;
 
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.rental.car_rental_backend.model.Role;
 import com.rental.car_rental_backend.model.User;
-import com.rental.car_rental_backend.repository.UserRepository;
+import com.rental.car_rental_backend.repository.UserRepository; // Import Page
 
-import lombok.RequiredArgsConstructor;
+import lombok.RequiredArgsConstructor; // Import Pageable
 
 @Service
 @RequiredArgsConstructor
@@ -17,8 +18,9 @@ public class UserService { // Ini adalah UserService yang baru, jangan bingung d
 
     private final UserRepository userRepository;
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    // *** MODIFIKASI METODE INI UNTUK PAGINASI ***
+    public Page<User> getAllUsers(Pageable pageable) { // Sekarang mengembalikan Page<User>
+        return userRepository.findAll(pageable);
     }
 
     public Optional<User> getUserById(Long id) {

@@ -53,11 +53,11 @@ const CarDetailPage = () => {
       <Link to="/" className="text-blue-600 hover:underline mb-4 inline-block">&larr; Kembali ke Daftar Mobil</Link>
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto flex flex-col md:flex-row items-center md:items-start gap-8">
         <div className="md:w-1/2">
-          <img
-            src={`https://via.placeholder.com/600x400?text=${car.brand}+${car.model}`}
-            alt={`${car.brand} ${car.model}`}
-            className="w-full h-auto object-cover rounded-lg shadow-md"
-          />
+          {car.imageUrl ? ( // Tampilkan gambar dari backend jika ada
+            <img src={`http://localhost:8080${car.imageUrl}`} alt={`${car.brand} ${car.model}`} className="w-full h-auto object-cover rounded-lg shadow-md"/>
+          ) : ( // Jika tidak ada gambar, fallback ke placeholder
+            <img src={`https://via.placeholder.com/600x400?text=${car.brand}+${car.model}`} alt={`${car.brand} ${car.model}`} className="w-full h-auto object-cover rounded-lg shadow-md"/>
+          )}
         </div>
         <div className="md:w-1/2">
           <h1 className="text-4xl font-bold mb-4">{car.brand} {car.model} ({car.year})</h1>

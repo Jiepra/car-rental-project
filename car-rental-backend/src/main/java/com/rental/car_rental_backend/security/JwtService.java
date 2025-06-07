@@ -8,6 +8,7 @@ import java.util.function.Function;
 import javax.crypto.SecretKey;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -34,21 +35,28 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        // Kita akan menambahkan peran sebagai klaim tambahan
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", userDetails.getAuthorities().stream()
+                            .map(GrantedAuthority::getAuthority)
+                            .findFirst() // Ambil peran pertama, atau sesuaikan jika ada banyak peran
+                            .orElse(""));
+
+        return generateToken(claims, userDetails);
     }
 
     public String generateToken(
-            Map<String, Object> extraClaims,
-            UserDetails userDetails
+        Map<String, Object> extraClaims,
+        UserDetails userDetails
     ) {
         return Jwts
-                .builder()
-                .claims(extraClaims)
-                .subject(userDetails.getUsername())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(getSignInKey())
-                .compact();
+            .builder()
+            .claims(extraClaims)
+            .subject(userDetails.getUsername())
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+            .signWith(getSignInKey())
+            .compact();
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {

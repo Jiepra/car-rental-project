@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 @Data // From Lombok: generates getters, setters, toString, equals, hashCode
 @NoArgsConstructor // From Lombok: generates a no-argument constructor
 @AllArgsConstructor // From Lombok: generates a constructor with all arguments
+@Builder
 public class Car {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +27,7 @@ public class Car {
     private String licensePlate; // Nomor Plat
     private double dailyRate; // Harga sewa per hari
     private boolean available; // Status ketersediaan
+    private String imageUrl; // Untuk Gambar
 
     // Konstruktor, getter, dan setter akan otomatis dibuat oleh Lombok (@Data)
 }

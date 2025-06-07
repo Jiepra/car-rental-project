@@ -1,7 +1,8 @@
 package com.rental.car_rental_backend.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -11,10 +12,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestController; // Import Page
 
-import com.rental.car_rental_backend.model.Role;
-import com.rental.car_rental_backend.model.User;
+import com.rental.car_rental_backend.model.Role; // Import Pageable
+import com.rental.car_rental_backend.model.User; // Untuk default Pageable
 import com.rental.car_rental_backend.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -27,12 +28,14 @@ public class UserController {
 
     private final UserService userService;
 
+    // *** MODIFIKASI ENDPOINT INI UNTUK PAGINASI ***
     @GetMapping // GET /api/users (hanya admin)
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
-        return new ResponseEntity<>(users, HttpStatus.OK);
+    public ResponseEntity<Page<User>> getAllUsers( // Sekarang mengembalikan Page<User>
+            @PageableDefault(size = 10, sort = "id") Pageable pageable // Default paginasi: 10 item per halaman
+    ) {
+        Page<User> usersPage = userService.getAllUsers(pageable);
+        return new ResponseEntity<>(usersPage, HttpStatus.OK);
     }
-
     @GetMapping("/{id}") // GET /api/users/{id} (hanya admin)
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)

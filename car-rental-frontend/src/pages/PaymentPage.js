@@ -1,6 +1,6 @@
 // src/pages/PaymentPage.js
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Import Link
+import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { useFormik } from 'formik'; // Import useFormik
@@ -9,7 +9,7 @@ import * as Yup from 'yup'; // Import Yup
 const PaymentPage = () => {
   const { carId } = useParams();
   const navigate = useNavigate();
-  const { token, isLoggedIn } = useContext(AuthContext); // Tidak perlu username di sini
+  const { token, isLoggedIn } = useContext(AuthContext);
 
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +19,7 @@ const PaymentPage = () => {
     startDate: Yup.date()
       .required('Tanggal mulai sewa wajib diisi')
       .nullable()
-      .min(new Date(new Date().setHours(0,0,0,0)), 'Tanggal mulai tidak boleh di masa lalu'), // Set to start of current day
+      .min(new Date(new Date().setHours(0,0,0,0)), 'Tanggal mulai tidak boleh di masa lalu'),
     endDate: Yup.date()
       .required('Tanggal selesai sewa wajib diisi')
       .nullable()
@@ -34,8 +34,8 @@ const PaymentPage = () => {
       .test('is-future-date', 'Tanggal kedaluwarsa tidak valid', (value) => {
         if (!value) return false;
         const [month, year] = value.split('/').map(Number);
-        const currentYear = new Date().getFullYear() % 100; // Get last two digits of current year
-        const currentMonth = new Date().getMonth() + 1; // Month is 0-indexed
+        const currentYear = new Date().getFullYear() % 100;
+        const currentMonth = new Date().getMonth() + 1;
 
         if (year < currentYear) return false;
         if (year === currentYear && month < currentMonth) return false;
@@ -57,11 +57,10 @@ const PaymentPage = () => {
     },
     validationSchema: paymentValidationSchema,
     onSubmit: async (values) => {
-      // Perhitungan total harga dan jumlah hari harus dilakukan di sini atau di useEffect
       const start = new Date(values.startDate);
       const end = new Date(values.endDate);
       const diffTime = Math.abs(end - start);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 untuk inklusif
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
       if (diffDays <= 0 || !car) {
         toast.error("Terjadi kesalahan kalkulasi harga. Mohon periksa tanggal.");
@@ -90,7 +89,13 @@ const PaymentPage = () => {
             navigate('/my-rentals');
           }, 3000);
         } else {
-          const errorData = await response.json().catch(() => ({}));
+          const text = await response.text();
+          let errorData = {};
+          try {
+            errorData = JSON.parse(text);
+          } catch (jsonErr) {
+            // Jika gagal parse JSON, gunakan text mentah
+          }
           toast.error(errorData.message || 'Gagal memproses penyewaan. Mohon coba lagi.');
           console.error('Failed to create rental:', errorData);
         }
@@ -135,7 +140,7 @@ const PaymentPage = () => {
     if (carId) {
       fetchCarDetails();
     }
-  }, [carId, isLoggedIn, navigate]); // Ditambah toast karena digunakan di sini
+  }, [carId, isLoggedIn, navigate]);
 
   // Effect untuk perhitungan harga berdasarkan nilai Formik
   useEffect(() => {
@@ -143,7 +148,7 @@ const PaymentPage = () => {
       const start = new Date(formik.values.startDate);
       const end = new Date(formik.values.endDate);
 
-      // Validasi tambahan untuk tanggal berakhir tidak sebelum tanggal mulai
+      // Validasi tambahan agar endDate tidak sebelum startDate secara visual di sini
       if (end < start) {
         setNumberOfDays(0);
         setTotalPrice(0);
@@ -164,10 +169,10 @@ const PaymentPage = () => {
       setNumberOfDays(0);
       setTotalPrice(0);
     }
-  }, [car, formik.values.startDate, formik.values.endDate]); // Dependensi Formik values
+  }, [car, formik.values.startDate, formik.values.endDate]);
 
   if (loading) return <div className="text-center p-8">Memuat detail mobil...</div>;
-  if (!car) return <div className="text-center p-8">Mobil tidak ditemukan atau tidak tersedia.</div>; // Hapus text-red-500 kosong
+  if (!car) return <div className="text-center p-8">Mobil tidak ditemukan atau tidak tersedia.</div>;
 
   return (
     <div className="container mx-auto p-8">
@@ -201,7 +206,7 @@ const PaymentPage = () => {
               type="date"
               id="startDate"
               name="startDate" // Tambahkan name
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm p-2"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.startDate}
@@ -280,7 +285,7 @@ const PaymentPage = () => {
           <button
             type="submit"
             className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition duration-300"
-            disabled={formik.isSubmitting} // Nonaktifkan tombol saat form sedang disubmit
+            disabled={formik.isSubmitting}
           >
             Konfirmasi & Bayar
           </button>
