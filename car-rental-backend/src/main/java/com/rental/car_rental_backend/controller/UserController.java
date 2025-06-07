@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController; // Import Page
 
 import com.rental.car_rental_backend.model.Role; // Import Pageable
@@ -29,18 +30,18 @@ public class UserController {
     private final UserService userService;
 
     // *** MODIFIKASI ENDPOINT INI UNTUK PAGINASI ***
-    @GetMapping // GET /api/users (hanya admin)
-    public ResponseEntity<Page<User>> getAllUsers( // Sekarang mengembalikan Page<User>
-            @PageableDefault(size = 10, sort = "id") Pageable pageable // Default paginasi: 10 item per halaman
+    @GetMapping
+    public ResponseEntity<Page<User>> getAllUsers(
+            @RequestParam(required = false) String search, // Tambahkan parameter search
+            @PageableDefault(size = 10, sort = "id") Pageable pageable
     ) {
-        Page<User> usersPage = userService.getAllUsers(pageable);
+        Page<User> usersPage;
+        if (search != null && !search.trim().isEmpty()) {
+            usersPage = userService.searchUsers(search, pageable); // Panggil metode search baru
+        } else {
+            usersPage = userService.getAllUsers(pageable);
+        }
         return new ResponseEntity<>(usersPage, HttpStatus.OK);
-    }
-    @GetMapping("/{id}") // GET /api/users/{id} (hanya admin)
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id)
-                .map(user -> new ResponseEntity<>(user, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     // Endpoint untuk update role user (hanya admin)

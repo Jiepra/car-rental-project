@@ -156,4 +156,29 @@ public class RentalService {
 
         return rentalRepository.save(rental);
     }
+
+    // *** TAMBAHKAN METODE INI UNTUK PENCARIAN DAN FILTER RENTAL ***
+    public Page<Rental> searchAndFilterRentals(String searchTerm, String status, Pageable pageable) {
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            if (status != null && !status.trim().isEmpty() && !status.equalsIgnoreCase("ALL")) {
+                // Cari berdasarkan username penyewa ATAU merek mobil DAN status
+                // Ini akan menjadi query JPA yang sedikit kompleks, atau menggunakan Specification (lebih baik)
+                // Untuk kesederhanaan, kita bisa melakukan filter setelah mengambil
+                // ATAU definisikan query spesifik di RentalRepository
+                // Contoh: return rentalRepository.findByUserUsernameContainingIgnoreCaseAndStatusOrCarBrandContainingIgnoreCaseAndStatus(...);
+                // Untuk sekarang, kita akan lakukan filter dasar setelah mengambil semua yang cocok
+                return rentalRepository.findByStatusAndUserUsernameContainingIgnoreCaseOrStatusAndCarBrandContainingIgnoreCase(
+                                status, searchTerm, status, searchTerm, pageable);
+            } else {
+                // Hanya cari berdasarkan username penyewa ATAU merek mobil
+                return rentalRepository.findByUserUsernameContainingIgnoreCaseOrCarBrandContainingIgnoreCase(searchTerm, searchTerm, pageable);
+            }
+        } else if (status != null && !status.trim().isEmpty() && !status.equalsIgnoreCase("ALL")) {
+            // Hanya filter berdasarkan status
+            return rentalRepository.findByStatus(status, pageable);
+        } else {
+            // Tanpa search term atau filter status
+            return rentalRepository.findAll(pageable);
+        }
+    }
 }

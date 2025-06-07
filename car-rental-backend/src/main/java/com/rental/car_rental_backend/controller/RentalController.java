@@ -3,16 +3,20 @@ package com.rental.car_rental_backend.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PathVariable; // Import HttpMethod
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping; // Import HttpMethod
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.rental.car_rental_backend.dto.RentalRequest;
@@ -29,12 +33,20 @@ public class RentalController {
 
     private final RentalService rentalService;
 
-    // Endpoint untuk mendapatkan semua rental (mungkin hanya untuk admin)
-    // Di SecurityConfig, ini akan diatur untuk ADMIN saja
+    // *** MODIFIKASI ENDPOINT INI UNTUK FILTER DAN PAGINASI ***
     @GetMapping
-    public ResponseEntity<List<Rental>> getAllRentals() {
-        List<Rental> rentals = rentalService.getAllRentals();
-        return new ResponseEntity<>(rentals, HttpStatus.OK);
+    public ResponseEntity<Page<Rental>> getAllRentals(
+            @RequestParam(required = false) String search, // Parameter untuk pencarian (username/mobil)
+            @RequestParam(required = false) String status, // Parameter untuk filter status (PENDING, CONFIRMED, etc.)
+            @PageableDefault(size = 10, sort = "id") Pageable pageable
+    ) {
+        Page<Rental> rentalsPage;
+        if (search != null || status != null) {
+            rentalsPage = rentalService.searchAndFilterRentals(search, status, pageable); // Panggil metode search/filter baru
+        } else {
+            rentalsPage = rentalService.getAllRentals(pageable);
+        }
+        return new ResponseEntity<>(rentalsPage, HttpStatus.OK);
     }
 
     // Endpoint untuk membuat pesanan rental

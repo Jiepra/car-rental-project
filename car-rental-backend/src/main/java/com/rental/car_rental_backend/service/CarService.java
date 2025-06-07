@@ -2,18 +2,17 @@
 package com.rental.car_rental_backend.service;
 
 import java.io.IOException;
-import java.util.List; // Tambahkan import jika belum ada
 import java.util.Optional; // Tambahkan import jika belum ada
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Autowired; // Tambahkan import jika belum ada
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable; // Tambahkan import Collections
-import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service; // Tambahkan import Collections
 import org.springframework.web.multipart.MultipartFile;
 
 import com.rental.car_rental_backend.model.Car;
-import com.rental.car_rental_backend.repository.CarRepository; // Import Page
-import com.rental.car_rental_backend.repository.RentalRepository;
+import com.rental.car_rental_backend.repository.CarRepository;
+import com.rental.car_rental_backend.repository.RentalRepository; // Import Page
 
 @Service
 public class CarService {
@@ -89,8 +88,6 @@ public class CarService {
         car.setAvailable(available);
         return carRepository.save(car);
     }
-
-
 
     // *** MODIFIKASI METODE INI UNTUK PAGINASI DAN FILTER ***
     public Page<Car> searchAndFilterCars(String searchTerm, Boolean available, Pageable pageable) {

@@ -41,4 +41,14 @@ public class UserService { // Ini adalah UserService yang baru, jangan bingung d
         // maka Anda tidak perlu menambahkan logika penghapusan rental di sini.
         userRepository.deleteById(id);
     }
+
+    // *** TAMBAHKAN METODE INI UNTUK PENCARIAN PENGGUNA ***
+    public Page<User> searchUsers(String searchTerm, Pageable pageable) {
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            // Spring Data JPA: cari berdasarkan username atau email
+            return userRepository.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(searchTerm, searchTerm, pageable);
+        } else {
+            return userRepository.findAll(pageable);
+        }
+    }
 }

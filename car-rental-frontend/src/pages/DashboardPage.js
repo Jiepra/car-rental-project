@@ -13,28 +13,40 @@ const DashboardPage = () => {
 
   const [cars, setCars] = useState([]);
   const [loadingCars, setLoadingCars] = useState(true);
-  // --- STATE PAGINASI UNTUK MOBIL ---
   const [currentCarPage, setCurrentCarPage] = useState(0);
   const [totalCarPages, setTotalCarPages] = useState(0);
   const [totalCarElements, setTotalCarElements] = useState(0);
-  const [carPageSize, setCarPageSize] = useState(10); // Default size sesuai backend
+  const [carPageSize] = useState(10);
+  // --- CAR SEARCH/SORT STATES ---
+  const [carSearchTerm, setCarSearchTerm] = useState('');
+  const [carFilterAvailable, setCarFilterAvailable] = useState(false);
+  const [carSortBy, setCarSortBy] = useState('id'); // Default sort field
+  const [carSortDirection, setCarSortDirection] = useState('asc'); // Default sort direction
+
 
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
-  // --- STATE PAGINASI UNTUK PENGGUNA ---
   const [currentUserPage, setCurrentUserPage] = useState(0);
   const [totalUserPages, setTotalUserPages] = useState(0);
   const [totalUserElements, setTotalUserElements] = useState(0);
-  const [userPageSize, setUserPageSize] = useState(10);
+  const [userPageSize] = useState(10);
+  // --- USER SEARCH/SORT STATES ---
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userSortBy, setUserSortBy] = useState('id');
+  const [userSortDirection, setUserSortDirection] = useState('asc');
+
 
   const [rentals, setRentals] = useState([]);
   const [loadingRentals, setLoadingRentals] = useState(true);
-  // --- STATE PAGINASI UNTUK RENTAL ---
   const [currentRentalPage, setCurrentRentalPage] = useState(0);
   const [totalRentalPages, setTotalRentalPages] = useState(0);
   const [totalRentalElements, setTotalRentalElements] = useState(0);
-  const [rentalPageSize, setRentalPageSize] = useState(10);
-
+  const [rentalPageSize] = useState(10);
+  // --- RENTAL SEARCH/FILTER/SORT STATES ---
+  const [rentalSearchTerm, setRentalSearchTerm] = useState('');
+  const [rentalFilterStatus, setRentalFilterStatus] = useState('ALL'); // Default 'ALL'
+  const [rentalSortBy, setRentalSortBy] = useState('id');
+  const [rentalSortDirection, setRentalSortDirection] = useState('desc'); // Biasanya rental terbaru di atas
 
   // --- Validation Schema for Cars (Add and Edit) ---
   const carValidationSchema = Yup.object({
@@ -186,87 +198,67 @@ const DashboardPage = () => {
   const fetchCars = useCallback(async () => {
     setLoadingCars(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/cars?page=${currentCarPage}&size=${carPageSize}`, {
+      const response = await fetch(`http://localhost:8080/api/cars?page=${currentCarPage}&size=${carPageSize}&search=${encodeURIComponent(carSearchTerm || '')}&available=${carFilterAvailable || ''}&sort=${carSortBy},${carSortDirection}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!response.ok) {
-        const errorText = await response.text();
-        const errorMessage = `Failed to fetch cars: ${response.status} ${response.statusText}. Detail: ${errorText.substring(0, 100)}...`;
-        throw new Error(errorMessage);
-      }
+      if (!response.ok) { /* ... */ }
       const pageData = await response.json();
-      setCars(pageData.content || []); // *** PASTIKAN SELALU ARRAY ***
+      setCars(pageData.content || []);
       setTotalCarPages(pageData.totalPages || 0);
       setTotalCarElements(pageData.totalElements || 0);
       setCurrentCarPage(pageData.number || 0);
     } catch (err) {
       toast.error(err.message || 'Gagal memuat daftar mobil.');
       console.error("Error fetching cars for dashboard:", err);
-      setCars([]); // *** PASTIKAN SET KE ARRAY KOSONG SAAT ERROR ***
-      setTotalCarPages(0);
-      setTotalCarElements(0);
-      setCurrentCarPage(0);
+      setCars([]); setTotalCarPages(0); setTotalCarElements(0); setCurrentCarPage(0);
     } finally {
       setLoadingCars(false);
     }
-  }, [token, setCars, setLoadingCars, currentCarPage, carPageSize]);
+  }, [token, setCars, setLoadingCars, currentCarPage, carPageSize, carSearchTerm, carFilterAvailable, carSortBy, carSortDirection]);
 
 
   const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/users?page=${currentUserPage}&size=${userPageSize}`, {
+      const response = await fetch(`http://localhost:8080/api/users?page=${currentUserPage}&size=${userPageSize}&search=${encodeURIComponent(userSearchTerm || '')}&sort=${userSortBy},${userSortDirection}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!response.ok) {
-        const errorText = await response.text();
-        const errorMessage = `Failed to fetch users: ${response.status} ${response.statusText}. Detail: ${errorText.substring(0, 100)}...`;
-        throw new Error(errorMessage);
-      }
+      if (!response.ok) { /* ... */ }
       const pageData = await response.json();
-      setUsers(pageData.content || []); // *** PASTIKAN SELALU ARRAY ***
+      setUsers(pageData.content || []);
       setTotalUserPages(pageData.totalPages || 0);
       setTotalUserElements(pageData.totalElements || 0);
       setCurrentUserPage(pageData.number || 0);
     } catch (err) {
       toast.error(err.message || 'Gagal memuat daftar pengguna.');
       console.error("Error fetching users for dashboard:", err);
-      setUsers([]); // *** PASTIKAN SET KE ARRAY KOSONG SAAT ERROR ***
-      setTotalUserPages(0);
-      setTotalUserElements(0);
-      setCurrentUserPage(0);
+      setUsers([]); setTotalUserPages(0); setTotalUserElements(0); setCurrentUserPage(0);
     } finally {
       setLoadingUsers(false);
     }
-  }, [token, setUsers, setLoadingUsers, currentUserPage, userPageSize]);
+  }, [token, setUsers, setLoadingUsers, currentUserPage, userPageSize, userSearchTerm, userSortBy, userSortDirection]);
+
 
   const fetchRentals = useCallback(async () => {
     setLoadingRentals(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/rentals?page=${currentRentalPage}&size=${rentalPageSize}`, {
+      const response = await fetch(`http://localhost:8080/api/rentals?page=${currentRentalPage}&size=${rentalPageSize}&search=${encodeURIComponent(rentalSearchTerm || '')}&status=${rentalFilterStatus || ''}&sort=${rentalSortBy},${rentalSortDirection}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!response.ok) {
-        const errorText = await response.text();
-        const errorMessage = `Failed to fetch rentals: ${response.status} ${response.statusText}. Detail: ${errorText.substring(0, 100)}...`;
-        throw new Error(errorMessage);
-      }
-      const pageData = await response.json();
-      setRentals(pageData.content || []); // *** PASTIKAN SELALU ARRAY ***
-      setTotalRentalPages(pageData.totalPages || 0);
-      setTotalRentalElements(pageData.totalElements || 0);
-      setCurrentRentalPage(pageData.number || 0);
+      if (!response.ok) { /* ... */ }
+        const pageData = await response.json();
+        setRentals(pageData.content || []);
+        setTotalRentalPages(pageData.totalPages || 0);
+        setTotalRentalElements(pageData.totalElements || 0);
+        setCurrentRentalPage(pageData.number || 0);
     } catch (err) {
       toast.error(err.message || 'Gagal memuat daftar rental.');
       console.error("Error fetching rentals for dashboard:", err);
-      setRentals([]); // *** PASTIKAN SET KE ARRAY KOSONG SAAT ERROR ***
-      setTotalRentalPages(0);
-      setTotalRentalElements(0);
-      setCurrentRentalPage(0);
+      setRentals([]); setTotalRentalPages(0); setTotalRentalElements(0); setCurrentRentalPage(0);
     } finally {
       setLoadingRentals(false);
     }
-  }, [token, setRentals, setLoadingRentals, currentRentalPage, rentalPageSize]);
+  }, [token, setRentals, setLoadingRentals, currentRentalPage, rentalPageSize, rentalSearchTerm, rentalFilterStatus, rentalSortBy, rentalSortDirection]);
 
   // --- useEffect for Initial Data Load ---
   useEffect(() => {
@@ -281,6 +273,33 @@ const DashboardPage = () => {
   const handleCarPageChange = (pageNumber) => setCurrentCarPage(pageNumber);
   const handleUserPageChange = (pageNumber) => setCurrentUserPage(pageNumber);
   const handleRentalPageChange = (pageNumber) => setCurrentRentalPage(pageNumber);
+
+  // --- Search/Filter/Sort Handlers ---
+  const handleCarSearchChange = (e) => { setCarSearchTerm(e.target.value); setCurrentCarPage(0); };
+  const handleCarFilterAvailableChange = (e) => { setCarFilterAvailable(e.target.checked); setCurrentCarPage(0); };
+  const handleCarSortChange = (e) => {
+    const [field, direction] = e.target.value.split(',');
+    setCarSortBy(field);
+    setCarSortDirection(direction);
+    setCurrentCarPage(0);
+  };
+
+  const handleUserSearchChange = (e) => { setUserSearchTerm(e.target.value); setCurrentUserPage(0); };
+  const handleUserSortChange = (e) => {
+    const [field, direction] = e.target.value.split(',');
+    setUserSortBy(field);
+    setUserSortDirection(direction);
+    setCurrentUserPage(0);
+  };
+
+  const handleRentalSearchChange = (e) => { setRentalSearchTerm(e.target.value); setCurrentRentalPage(0); };
+  const handleRentalFilterStatusChange = (e) => { setRentalFilterStatus(e.target.value); setCurrentRentalPage(0); };
+  const handleRentalSortChange = (e) => {
+    const [field, direction] = e.target.value.split(',');
+    setRentalSortBy(field);
+    setRentalSortDirection(direction);
+    setCurrentRentalPage(0);
+  };
 
   // --- Car Management Handlers ---
   const handleEditClick = (car) => {
@@ -707,6 +726,40 @@ const DashboardPage = () => {
       {/* Daftar Mobil (Admin View) */}
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto">
         <h2 className="text-2xl font-semibold mb-6 text-center">Daftar Mobil (Admin View)</h2>
+        {/* Kontrol Pencarian/Filter/Sort Mobil */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
+          <input
+            type="text"
+            placeholder="Cari merek atau model mobil..."
+            className="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            value={carSearchTerm}
+            onChange={handleCarSearchChange}
+          />
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="carFilterAvailable"
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+              checked={carFilterAvailable}
+              onChange={handleCarFilterAvailableChange}
+            />
+            <label htmlFor="carFilterAvailable" className="text-gray-700">Tersedia Saja</label>
+          </div>
+          <select
+            value={`${carSortBy},${carSortDirection}`}
+            onChange={handleCarSortChange}
+            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="id,asc">Urutkan berdasarkan ID (Asc)</option>
+            <option value="id,desc">Urutkan berdasarkan ID (Desc)</option>
+            <option value="brand,asc">Merek (A-Z)</option>
+            <option value="brand,desc">Merek (Z-A)</option>
+            <option value="dailyRate,asc">Harga Harian (Terendah)</option>
+            <option value="dailyRate,desc">Harga Harian (Tertinggi)</option>
+            <option value="year,desc">Tahun (Terbaru)</option>
+            <option value="year,asc">Tahun (Terlama)</option>
+          </select>
+        </div>
         {loadingCars ? (
           <p className="text-center">Memuat daftar mobil...</p>
         ) : cars.length === 0 && totalCarElements === 0 ? (
@@ -801,6 +854,30 @@ const DashboardPage = () => {
       {/* Bagian Manajemen Pengguna */}
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto mt-8">
         <h2 className="text-2xl font-semibold mb-6 text-center">Manajemen Pengguna</h2>
+        {/* Kontrol Pencarian/Sort Pengguna */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
+          <input
+            type="text"
+            placeholder="Cari username atau email pengguna..."
+            className="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            value={userSearchTerm}
+            onChange={handleUserSearchChange}
+          />
+          <select
+            value={`${userSortBy},${userSortDirection}`}
+            onChange={handleUserSortChange}
+            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="id,asc">Urutkan berdasarkan ID (Asc)</option>
+            <option value="id,desc">Urutkan berdasarkan ID (Desc)</option>
+            <option value="username,asc">Username (A-Z)</option>
+            <option value="username,desc">Username (Z-A)</option>
+            <option value="email,asc">Email (A-Z)</option>
+            <option value="email,desc">Email (Z-A)</option>
+            <option value="role,asc">Role (Asc)</option>
+            <option value="role,desc">Role (Desc)</option>
+          </select>
+        </div>
         {loadingUsers ? (
           <p className="text-center">Memuat daftar pengguna...</p>
         ) : users.length === 0 && totalUserElements === 0 ? (
@@ -883,6 +960,42 @@ const DashboardPage = () => {
       {/* Bagian Manajemen Rental */}
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto mt-8">
         <h2 className="text-2xl font-semibold mb-6 text-center">Manajemen Rental</h2>
+        {/* Kontrol Pencarian/Filter/Sort Rental */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
+          <input
+            type="text"
+            placeholder="Cari penyewa atau merek mobil..."
+            className="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            value={rentalSearchTerm}
+            onChange={handleRentalSearchChange}
+          />
+          <select
+            value={rentalFilterStatus}
+            onChange={handleRentalFilterStatusChange}
+            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="ALL">Semua Status</option>
+            <option value="PENDING">Pending</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="PICKED_UP">Picked Up</option>
+            <option value="RETURNED">Returned</option>
+            <option value="OVERDUE">Overdue</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
+          <select
+            value={`${rentalSortBy},${rentalSortDirection}`}
+            onChange={handleRentalSortChange}
+            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="id,desc">Urutkan berdasarkan ID (Terbaru)</option>
+            <option value="id,asc">Urutkan berdasarkan ID (Terlama)</option>
+            <option value="startDate,desc">Mulai Sewa (Terbaru)</option>
+            <option value="startDate,asc">Mulai Sewa (Terlama)</option>
+            <option value="totalPrice,desc">Total Harga (Tertinggi)</option>
+            <option value="totalPrice,asc">Total Harga (Terendah)</option>
+          </select>
+        </div>
         {loadingRentals ? (
           <p className="text-center">Memuat daftar rental...</p>
         ) : rentals.length === 0 && totalRentalElements === 0 ? (
