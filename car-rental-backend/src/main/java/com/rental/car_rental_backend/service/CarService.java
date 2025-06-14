@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.rental.car_rental_backend.model.Car;
 import com.rental.car_rental_backend.repository.CarRepository;
-import com.rental.car_rental_backend.repository.RentalRepository; // Import Page
 
 @Service
 public class CarService {
@@ -22,9 +21,6 @@ public class CarService {
 
     @Autowired
     private ImageService imageService;
-
-    @Autowired
-    private RentalRepository rentalRepository; // Inject RentalRepository untuk deleteCar
 
     // *** MODIFIKASI METODE INI UNTUK PAGINASI ***
     public Page<Car> getAllCars(Pageable pageable) { // Sekarang mengembalikan Page<Car>

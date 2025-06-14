@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const DashboardPage = () => {
   const { isLoggedIn, isAdmin, token, username: loggedInUsername } = useContext(AuthContext);
@@ -47,6 +47,11 @@ const DashboardPage = () => {
   const [rentalFilterStatus, setRentalFilterStatus] = useState('ALL'); // Default 'ALL'
   const [rentalSortBy, setRentalSortBy] = useState('id');
   const [rentalSortDirection, setRentalSortDirection] = useState('desc'); // Biasanya rental terbaru di atas
+
+  // *** STATE BARU UNTUK MODAL KONFIRMASI HAPUS ***
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null); // Menyimpan ID/objek yang akan dihapus
+  const [deleteItemType, setDeleteItemType] = useState(null); // 'car' atau 'user'
 
   // --- Validation Schema for Cars (Add and Edit) ---
   const carValidationSchema = Yup.object({
@@ -311,9 +316,18 @@ const DashboardPage = () => {
   };
 
   const handleDeleteCar = async (carId) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus mobil ini? Semua rental terkait akan ikut terhapus.')) {
+    // Tampilkan modal konfirmasi alih-alih window.confirm
+    setItemToDelete(carId);
+    setDeleteItemType('car');
+    setIsDeleteModalOpen(true);
+  };
+
+  // *** FUNGSI BARU UNTUK KONFIRMASI HAPUS SEBENARNYA ***
+  const confirmDelete = async () => {
+    setIsDeleteModalOpen(false); // Tutup modal
+    if (deleteItemType === 'car' && itemToDelete !== null) {
       try {
-        const response = await fetch(`http://localhost:8080/api/cars/${carId}`, {
+        const response = await fetch(`http://localhost:8080/api/cars/${itemToDelete}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -330,7 +344,34 @@ const DashboardPage = () => {
         toast.error('Terjadi kesalahan jaringan atau server saat menghapus mobil.');
         console.error('Network error deleting car:', err);
       }
+    } else if (deleteItemType === 'user' && itemToDelete !== null) {
+      try {
+        const response = await fetch(`http://localhost:8080/api/users/${itemToDelete}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok || response.status === 204) {
+          toast.success('Pengguna berhasil dihapus!');
+          fetchUsers();
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          toast.error(errorData.message || `Gagal menghapus pengguna: ${response.status} ${response.statusText}`);
+          console.error('Failed to delete user:', response.status, errorData);
+        }
+      } catch (err) {
+        toast.error('Terjadi kesalahan jaringan atau server saat menghapus pengguna.');
+        console.error('Network error deleting user:', err);
+      }
     }
+    setItemToDelete(null); // Reset item yang akan dihapus
+    setDeleteItemType(null); // Reset tipe item
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteModalOpen(false); // Tutup modal
+    setItemToDelete(null);
+    setDeleteItemType(null);
   };
 
   // --- User Management Handlers ---
@@ -1116,8 +1157,21 @@ const DashboardPage = () => {
             </div>
           )}
 
-      </div>
-
+      </div> 
+          {/* *** MODAL KONFIRMASI HAPUS (BARU) *** */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        message={
+          deleteItemType === 'car'
+            ? 'Apakah Anda yakin ingin menghapus mobil ini? Semua rental terkait akan ikut terhapus.'
+            : deleteItemType === 'user'
+            ? 'Apakah Anda yakin ingin menghapus pengguna ini? Semua data terkait (misal: rental) akan dihapus.'
+            : 'Apakah Anda yakin ingin melakukan aksi ini?'
+        }
+        title={`Konfirmasi Hapus ${deleteItemType === 'car' ? 'Mobil' : 'Pengguna'}`}
+      />
     </div>
   );
 };
