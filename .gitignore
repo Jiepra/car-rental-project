@@ -4,7 +4,6 @@
 
 # Spring Boot backend ignores
 /car-rental-backend/target/
-/car-rental-backend/src/main/resources/static/images/
 /car-rental-backend/.mvn/timing.properties
 /car-rental-backend/.flattened-pom.xml
 /car-rental-backend/pom.xml.tag
