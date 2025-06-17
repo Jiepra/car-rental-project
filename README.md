@@ -86,6 +86,10 @@ Pastikan Anda telah menginstal:
 1.  Buat database MySQL baru dengan nama `car_rental_db`.
 2.  Perbarui kredensial database di `car-rental-backend/src/main/resources/application.properties` (bagian `spring.datasource.url`, `username`, `password`) sesuai dengan setup MySQL lokal Anda.
 3.  Spring JPA akan secara otomatis membuat skema tabel (Car, User, Rental) saat aplikasi backend pertama kali berjalan (karena `ddl-auto=update`).
+4.  Tambahkan Username pada table users seperti ini
+   ```bash
+   insert into users values(4, 'admin@example.com', '$2a$10$7Uvq3IgSNJ9dVQ3bWOf3IeQZdoJ8vdIUqBBJ9LYDN5g1aUA18hWg2', 'ADMIN', 'adminuser');
+```
 
 ### ▶️ Menjalankan Backend (Spring Boot)
 
@@ -124,48 +128,6 @@ Pastikan Anda telah menginstal:
 ### 🌐 Mengakses Aplikasi
 
 * Buka browser Anda dan navigasi ke `http://localhost:3000`.
-
-## ☁️ Deployment ke Cloud (dengan Render)
-
-Proyek ini dapat di-*deploy* ke **Render** untuk *hosting* *backend* (sebagai `Web Service`) dan *frontend* (sebagai `Static Site`).
-
-### 1. Persiapan Database Render
-
-* Buat Database PostgreSQL baru di [Render Dashboard](https://dashboard.render.com/new/database).
-* Catat `External Database URL`, `Username`, dan `Password`.
-
-### 2. Deployment Backend (Web Service)
-
-* Di [Render Dashboard](https://dashboard.render.com/new/web-service), buat `Web Service` baru.
-* Hubungkan ke repositori GitHub Anda (pilih repositori `car-rental-project`).
-* **Root Directory:** `car-rental-backend`
-* **Build Command:** `./mvnw clean install -DskipTests`
-* **Start Command:** `java -jar target/*.jar`
-* **Environment Variables:** Tambahkan:
-    * `JWT_SECRET_KEY`: `your_strong_jwt_secret_key` (string acak yang panjang dan kuat)
-    * `SPRING_DATASOURCE_URL`: `External Database URL` dari Render PostgreSQL Anda.
-    * `SPRING_DATASOURCE_USERNAME`: `Username` dari Render PostgreSQL Anda.
-    * `SPRING_DATASOURCE_PASSWORD`: `Password` dari Render PostgreSQL Anda.
-    * `SPRING_JPA_HIBERNATE_DDL_AUTO`: `update`
-    * `FILE_UPLOAD_DIR`: `/var/data/images/` (Ini adalah path untuk *persistent disk* di Render, yang harus dikonfigurasi terpisah. Jika tidak ada disk, gunakan `/tmp/images/` untuk penyimpanan sementara yang akan hilang saat deploy ulang). **Untuk produksi, sangat disarankan menggunakan AWS S3 atau Cloudinary untuk gambar.**
-    * `SERVER_PORT`: `8080` (Render akan meng-*override* ke *port* yang tersedia secara otomatis).
-
-### 3. Deployment Frontend (Static Site)
-
-* Setelah Backend di-*deploy* dan Anda mendapatkan URL publiknya (misalnya `https://car-rental-backend-abc.onrender.com`).
-* **Perbarui semua URL *backend* di kode Frontend Anda (`car-rental-frontend`):**
-    * Ganti semua `http://localhost:8080` menjadi URL publik Backend Render Anda di file-file seperti `DashboardPage.js`, `HomePage.js`, `PaymentPage.js`, `CarDetailPage.js`.
-* **Perbarui CORS di Backend Render Anda:**
-    * Di pengaturan `Web Service` Backend Anda di Render, tambahkan domain *frontend* publik Anda ke daftar `Allowed Origins` di konfigurasi CORS. Contoh: jika *frontend* di-*deploy* ke `https://car-rental-frontend-xyz.onrender.com`, maka di `car-rental-backend/src/main/java/com/rental/car_rental_backend/security/SecurityConfig.java`, ubah `configuration.setAllowedOrigins(List.of("http://localhost:3000"));` menjadi `configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://car-rental-frontend-xyz.onrender.com"));`.
-* Di [Render Dashboard](https://dashboard.render.com/new/static-site), buat `Static Site` baru.
-* Hubungkan ke repositori GitHub Anda.
-* **Root Directory:** `car-rental-frontend`
-* **Build Command:** `npm run build`
-* **Publish Directory:** `build`
-
-## 🤝 Kontribusi
-
-Merasa ingin berkontribusi? Ide-ide, laporan bug, atau permintaan fitur selalu disambut!
 
 ## 📄 Lisensi
 
