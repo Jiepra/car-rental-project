@@ -90,6 +90,7 @@ Pastikan Anda telah menginstal:
    ```bash
    insert into users values(4, 'admin@example.com', '$2a$10$7Uvq3IgSNJ9dVQ3bWOf3IeQZdoJ8vdIUqBBJ9LYDN5g1aUA18hWg2', 'ADMIN', 'adminuser');
 ```
+5. Untuk Password : password123
 
 ### ▶️ Menjalankan Backend (Spring Boot)
 
